@@ -14,7 +14,7 @@ A partida termina quando alguém recebe as cinco letras de `BURRO`; essa pessoa 
 
 ### Integração e privacidade
 
-`GameEngine` expõe comandos de jogo e eventos por `subscribe`, além das interfaces `GameCommandPort` e `GameEventPort` para um adaptador Bluetooth futuro. O motor não implementa Bluetooth. Use `getState(playerId)` para obter um retrato que contém apenas a mão daquele jogador; as mãos adversárias e o baralho ficam ocultos. `getPlayerHand(playerId)` retorna a mão individual para a tela local.
+`GameEngine` expõe comandos de jogo e eventos por `subscribe(playerId, listener)`, além das interfaces `GameCommandPort` e `GameEventPort` para um adaptador Bluetooth futuro. O motor não implementa Bluetooth. Os dados de `card-received` são entregues apenas ao assinante daquele jogador; eventos de troca compartilhados informam remetente e destinatário, sem incluir a carta. Use `getState(playerId)` para obter um retrato que contém apenas a mão daquele jogador; as mãos adversárias e o baralho ficam ocultos. `getPlayerHand(playerId)` retorna a mão individual para a tela local. O adaptador Bluetooth deve vincular o identificador ao dispositivo autenticado antes de chamar comandos ou assinar eventos.
 
 ### Testes
 

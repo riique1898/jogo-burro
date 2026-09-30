@@ -97,6 +97,25 @@ test('moves each selected card to the next player in the order', () => {
   assert.ok(game.getPlayerHand('lucas').some((card) => card.id === sentBySecond));
 });
 
+test('sends each private card-received event only to its recipient', () => {
+  const game = new GameEngine(roster);
+  const receivedByLucas = [];
+  const receivedByHenrique = [];
+  game.subscribe('lucas', (event) => {
+    if (event.type === 'card-received') receivedByLucas.push(event.card.id);
+  });
+  game.subscribe('henrique', (event) => {
+    if (event.type === 'card-received') receivedByHenrique.push(event.card.id);
+  });
+  const sentByLucas = game.getPlayerHand('lucas')[0].id;
+  const sentByHenrique = game.getPlayerHand('henrique')[0].id;
+  game.playCard('lucas', sentByLucas);
+  game.playCard('henrique', sentByHenrique);
+  game.finalizeExchange();
+  assert.deepEqual(receivedByLucas, [sentByHenrique]);
+  assert.deepEqual(receivedByHenrique, [sentByLucas]);
+});
+
 test('advances current player in fixed order while cards are selected', () => {
   const game = new GameEngine(roster);
   assert.equal(game.getState('lucas').currentPlayerId, 'lucas');
@@ -127,7 +146,7 @@ test('recognizes four cards with the same value', () => {
 test('records a round winner and emits completion event after a valid claim', () => {
   const game = engineForFourOfAKind();
   const observed = [];
-  game.subscribe((event) => observed.push(event.type));
+  game.subscribe('lucas', (event) => observed.push(event.type));
   completeWinningExchange(game);
   const result = game.claimFourOfAKind('lucas');
   assert.equal(result.ok, true);

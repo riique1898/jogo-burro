@@ -19,7 +19,7 @@ export class GameEngine {
   private readonly random: () => number;
   private readonly now: () => Date;
   private readonly idFactory: () => string;
-  private readonly listeners = new Set<GameEventListener>();
+  private readonly listeners = new Map<GameEventListener, string>();
 
   constructor(players: readonly PlayerInput[], options: GameEngineOptions = {}) {
     validatePlayerCount(players.length);
@@ -37,8 +37,11 @@ export class GameEngine {
     this.state = this.createInitialState();
   }
 
-  subscribe(listener: GameEventListener): () => void {
-    this.listeners.add(listener);
+  subscribe(playerId: string, listener: GameEventListener): () => void {
+    if (!this.state.order.includes(playerId)) {
+      throw new Error(`Jogador desconhecido: ${playerId}.`);
+    }
+    this.listeners.set(listener, playerId);
     return () => this.listeners.delete(listener);
   }
 
@@ -100,7 +103,7 @@ export class GameEngine {
     if (!card) return this.failure('Não foi possível retirar a carta selecionada.');
     this.state.pendingCards[playerId] = card;
     const recipient = this.getNextPlayer(playerId);
-    this.emit({ type: 'card-played', playerId, recipientId: recipient.id, cardId: card.id });
+    this.emit({ type: 'card-played', playerId, recipientId: recipient.id });
 
     const nextPlayerIndex = (this.state.order.indexOf(playerId) + 1) % this.state.order.length;
     this.state.currentPlayerId = this.state.order[nextPlayerIndex] as string;
@@ -137,7 +140,13 @@ export class GameEngine {
     this.state.phase = this.state.players.some((player) => hasFourOfAKind(player.hand))
       ? 'claiming'
       : 'selecting';
-    this.emit({ type: 'exchange-finalized', transfers });
+    this.emit({
+      type: 'exchange-finalized',
+      transfers: transfers.map(({ from, to }) => ({ from, to })),
+    });
+    for (const transfer of transfers) {
+      this.emit({ type: 'card-received', playerId: transfer.to, card: transfer.card });
+    }
     this.emit({ type: 'turn-changed', playerId: this.state.currentPlayerId });
     return { ok: true, value: undefined };
   }
@@ -249,6 +258,9 @@ export class GameEngine {
   }
 
   private emit(event: GameEvent): void {
-    for (const listener of this.listeners) listener(structuredClone(event));
+    for (const [listener, viewerId] of this.listeners) {
+      if (event.type === 'card-received' && event.playerId !== viewerId) continue;
+      listener(structuredClone(event));
+    }
   }
 }

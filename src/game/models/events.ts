@@ -2,9 +2,10 @@ import type { Card } from './card.ts';
 import type { GameResult } from './game.ts';
 
 export type GameEvent =
-  | { type: 'card-played'; playerId: string; recipientId: string; cardId: string }
+  | { type: 'card-played'; playerId: string; recipientId: string }
   | { type: 'turn-changed'; playerId: string }
-  | { type: 'exchange-finalized'; transfers: Array<{ from: string; to: string; card: Card }> }
+  | { type: 'exchange-finalized'; transfers: Array<{ from: string; to: string }> }
+  | { type: 'card-received'; playerId: string; card: Card }
   | { type: 'player-completed'; winnerId: string; penalizedId: string }
   | { type: 'penalty-assigned'; playerId: string; letter: string }
   | { type: 'game-finished'; result: GameResult }
@@ -19,5 +20,5 @@ export interface GameCommandPort {
 }
 
 export interface GameEventPort {
-  subscribe(listener: GameEventListener): () => void;
+  subscribe(playerId: string, listener: GameEventListener): () => void;
 }
