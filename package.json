@@ -1,0 +1,8 @@
+{
+  "name": "jogo-burro",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/game/GameEngine.test.js"
+  }
+}
